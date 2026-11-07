@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A2A66">
+<meta name="robots" content="noindex">
+<title>Admin — Glow Dental</title>
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0A2A66;--blue:#1557D6;--sky:#E8F0FF;--mint:#16B88A;--ink:#0E1726;--muted:#667085;--line:#E7EAF0;--bg:#F5F7FB;--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:14.5px}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer;border:0;background:none}
+.wrap{max-width:640px;margin:0 auto;padding-bottom:calc(30px + var(--sb))}
+.top{background:linear-gradient(160deg,#0A2A66,#1557D6);color:#fff;padding:calc(16px + var(--st)) 16px 16px;border-radius:0 0 22px 22px}
+.top h1{margin:0;font-size:18px;font-weight:800}.top small{opacity:.75}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.kpi{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:10px}
+.kpi b{display:block;font-size:18px;font-weight:800}.kpi span{font-size:11.5px;opacity:.8}
+.tabs{display:flex;gap:6px;padding:12px 16px;position:sticky;top:0;background:var(--bg);z-index:5}
+.tab{flex:1;height:40px;border-radius:12px;background:#fff;border:1px solid var(--line);font-weight:700;font-size:13.5px}
+.tab.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.pad{padding:0 16px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:0 16px 10px;scrollbar-width:none}
+.chip{flex:none;height:32px;padding:0 12px;border-radius:99px;background:#fff;border:1px solid var(--line);font-size:12.5px;font-weight:700}
+.chip.on{background:var(--sky);border-color:var(--blue);color:var(--navy)}
+.o{background:#fff;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 1px 2px rgba(16,24,40,.05);border:1px solid #EEF1F6}
+.o .h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.o .h b{font-size:15px}
+.o .m{font-size:12.5px;color:var(--muted);margin-top:3px}
+.o pre{white-space:pre-wrap;font-family:inherit;font-size:13px;background:var(--bg);border-radius:12px;padding:10px;margin:10px 0;line-height:1.5}
+.o .tt{display:flex;justify-content:space-between;align-items:center;font-weight:800;color:var(--navy)}
+.acts{display:flex;gap:8px;margin-top:10px}
+.acts select{flex:1;height:40px;border-radius:11px;border:1.5px solid var(--line);padding:0 8px;font-weight:700;background:#fff}
+.btn{height:40px;border-radius:11px;padding:0 14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none}
+.btn.wa{background:#1DA851;color:#fff}.btn.call{background:var(--sky);color:var(--blue)}.btn.pri{background:var(--blue);color:#fff;width:100%;height:48px;font-size:15px}
+.st{font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:99px;white-space:nowrap}
+.st-nouvelle{background:#FFF6E5;color:#B54708}.st-confirmée{background:var(--sky);color:var(--blue)}.st-en{background:#F4EBFF;color:#6941C6}.st-livrée{background:#E3F8F1;color:#067647}.st-annulée{background:#FEF3F2;color:#B42318}
+.search{width:100%;height:44px;border-radius:12px;border:1.5px solid var(--line);padding:0 12px;margin-bottom:10px;background:#fff;outline:0}
+.pr{display:flex;align-items:center;gap:10px;background:#fff;border-radius:14px;padding:10px;margin-bottom:8px;border:1px solid #EEF1F6}
+.pr img{width:48px;height:48px;object-fit:contain;border-radius:10px;border:1px solid var(--line);flex:none}
+.pr .in{flex:1;min-width:0}.pr .in b{font-size:13px;display:block;line-height:1.25}
+.pr input[type=number],.pr input[type=text]{width:100%;height:36px;border:1.5px solid var(--line);border-radius:10px;padding:0 8px;margin-top:5px;font-weight:700}
+.sw{position:relative;width:46px;height:28px;flex:none}.sw input{display:none}
+.sw span{position:absolute;inset:0;background:#D0D5DD;border-radius:99px;transition:.2s}
+.sw span:after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.sw input:checked+span{background:var(--mint)}.sw input:checked+span:after{left:21px}
+.login{max-width:380px;margin:12vh auto 0;padding:24px;text-align:center}
+.login input{width:100%;height:54px;border-radius:14px;border:1.5px solid var(--line);text-align:center;font-size:22px;letter-spacing:6px;margin:18px 0 12px;outline:0;background:#fff}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+.toast{position:fixed;left:50%;top:calc(14px + var(--st));transform:translate(-50%,-160%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;font-size:13.5px;transition:.3s;z-index:9}
+.toast.on{transform:translate(-50%,0)}
+.save{color:var(--mint);font-size:11.5px;font-weight:800}
+.bars{display:grid;gap:8px}.bar{background:#fff;border-radius:12px;padding:10px 12px;border:1px solid #EEF1F6}
+.bar .l{display:flex;justify-content:space-between;font-size:13px;font-weight:700}.bar .t{height:8px;border-radius:9px;background:var(--bg);margin-top:6px;overflow:hidden}.bar .t i{display:block;height:100%;background:var(--blue);border-radius:9px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+const CONFIG = { apiUrl: "" }; // nefs lien Apps Script li f app.js
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=n=>Number(n||0).toLocaleString('fr-FR').replace(/ | /g,' ')+' DH';
+const ses={get(){try{return sessionStorage.getItem('gd_pin')||''}catch(e){return''}},set(v){try{sessionStorage.setItem('gd_pin',v)}catch(e){}}};
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),1600)}
+async function api(body){const r=await fetch(CONFIG.apiUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({pin:PIN},body))});return r.json()}
+let PIN=ses.get(), D=null, tab='cmd', filt='nouvelle', pq='';
+const wa=t=>{let d=String(t).replace(/\D/g,'');if(d[0]==='0')d='212'+d.slice(1);return d};
+
+function login(err){
+  if(!CONFIG.apiUrl){$('#app').innerHTML=`<div class="login"><h2>Admin Glow Dental</h2><p style="color:var(--muted)">L'admin n'est pas encore relié à Google Sheet. Ajoutez le lien Apps Script dans <b>admin.html</b> et <b>app.js</b> (CONFIG.apiUrl).</p></div>`;return}
+  $('#app').innerHTML=`<div class="login"><div style="font-size:40px">🦷</div><h2 style="margin:6px 0">Admin Glow Dental</h2><div style="color:var(--muted)">Entrez votre code</div>
+   <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••"><button class="btn pri" id="go">Se connecter</button>
+   ${err?`<p style="color:#B42318;font-weight:700">Code incorrect</p>`:''}</div>`;
+  const go=async()=>{PIN=$('#pin').value.trim();$('#go').textContent='…';try{const r=await api({action:'admin_login'});if(r.ok){ses.set(PIN);load()}else login(true)}catch(e){toast('Connexion impossible');login()}};
+  $('#go').onclick=go;$('#pin').onkeydown=e=>{if(e.key==='Enter')go()};$('#pin').focus();
+}
+async function load(){
+  try{const r=await api({action:'admin_list'});if(!r.ok){ses.set('');return login(r.error==='pin')}D=r;render()}catch(e){toast('Connexion impossible')}
+}
+function kpis(){
+  const today=new Date().toISOString().slice(0,10),month=today.slice(0,7);
+  const ok=D.commandes.filter(c=>c.statut!=='annulée');
+  const t=ok.filter(c=>c.date.startsWith(today)),m=ok.filter(c=>c.date.startsWith(month));
+  return {today:t.length,todayCA:t.reduce((a,c)=>a+c.total,0),month:m.reduce((a,c)=>a+c.total,0),nouv:D.commandes.filter(c=>c.statut==='nouvelle').length};
+}
+function render(){
+  const k=kpis();
+  $('#app').innerHTML=`<div class="wrap"><header class="top"><div style="display:flex;justify-content:space-between;align-items:center"><div><h1>Glow Dental · Admin</h1><small>${D.commandes.length} commande${D.commandes.length>1?"s":""} · ${D.produits.length} produits</small></div>
+    <button class="btn" style="background:rgba(255,255,255,.15);color:#fff" id="ref">↻</button></div>
+    <div class="kpis"><div class="kpi"><b>${k.nouv}</b><span>À traiter</span></div><div class="kpi"><b>${fmt(k.todayCA)}</b><span>Aujourd'hui (${k.today})</span></div><div class="kpi"><b>${fmt(k.month)}</b><span>Ce mois</span></div></div></header>
+    <div class="tabs"><button class="tab ${tab==='cmd'?'on':''}" data-t="cmd">Commandes</button><button class="tab ${tab==='prod'?'on':''}" data-t="prod">Produits</button><button class="tab ${tab==='stat'?'on':''}" data-t="stat">Stats</button></div>
+    <div id="view"></div></div>`;
+  $('#ref').onclick=()=>{toast('Actualisation…');load()};
+  document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()});
+  ({cmd:vCmd,prod:vProd,stat:vStat})[tab]();
+}
+function vCmd(){
+  const sts=['tous',...D.statuts];
+  const list=D.commandes.filter(c=>filt==='tous'||c.statut===filt);
+  $('#view').innerHTML=`<div class="chips">${sts.map(s=>`<button class="chip ${filt===s?'on':''}" data-f="${s}">${s} ${s==='tous'?D.commandes.length:D.commandes.filter(c=>c.statut===s).length}</button>`).join('')}</div>
+   <div class="pad">${list.length?list.map(c=>`<div class="o"><div class="h"><b>${esc(c.id)}</b><span class="st st-${esc(c.statut.split(' ')[0])}">${esc(c.statut)}</span></div>
+    <div class="m">${esc(c.date)} · ${esc(c.nom)}${c.cabinet?' · '+esc(c.cabinet):''} · ${esc(c.ville)}</div>
+    <pre>${esc(c.produits)}${c.note?'\n\n📝 '+esc(c.note):''}</pre>
+    <div class="tt"><span>${c.articles} article${c.articles>1?'s':''}</span><span>${fmt(c.total)}</span></div>
+    <div class="acts"><select data-id="${esc(c.id)}">${D.statuts.map(s=>`<option ${s===c.statut?'selected':''}>${s}</option>`).join('')}</select>
+     <a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${wa(c.tel)}?text=${encodeURIComponent('Bonjour '+c.nom+', concernant votre commande '+c.id+' chez Glow Dental : ')}">WhatsApp</a>
+     <a class="btn call" href="tel:${esc(c.tel)}">${esc(c.tel)}</a></div></div>`).join(''):`<div class="empty">Aucune commande « ${esc(filt)} »</div>`}</div>`;
+  document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{filt=b.dataset.f;vCmd()});
+  document.querySelectorAll('select[data-id]').forEach(s=>s.onchange=async()=>{const c=D.commandes.find(x=>x.id===s.dataset.id);const old=c.statut;c.statut=s.value;
+    try{const r=await api({action:'admin_statut',id:c.id,statut:s.value});if(!r.ok)throw 0;toast('Statut : '+s.value+' ✓');render()}catch(e){c.statut=old;toast('Erreur, réessayez');render()}});
+}
+function vProd(){
+  const norm=s=>String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+  const list=D.produits.filter(p=>!pq||norm(p.name).includes(norm(pq))).slice(0,80);
+  $('#view').innerHTML=`<div class="pad"><input class="search" id="pq" placeholder="Rechercher un produit…" value="${esc(pq)}">
+   <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Modifiez le prix puis quittez le champ : c'est enregistré et visible sur le site. Options au format <b>5 cm:125 | 10 cm:250</b>.</p>
+   ${list.map(p=>`<div class="pr"><img src="${esc(p.photo||'img/'+p.id+'.webp')}" alt=""><div class="in"><b>${esc(p.name)}</b>
+    ${p.v?`<input type="text" data-var="${p.id}" value="${esc(p.v.map(v=>v.l+':'+v.p).join(' | '))}">`:`<input type="number" inputmode="numeric" data-prix="${p.id}" value="${p.p==null?'':p.p}" placeholder="Sur demande">`}
+    <span class="save" id="s-${p.id}"></span></div>
+    <label class="sw" title="Disponible"><input type="checkbox" data-dispo="${p.id}" ${p.dispo?'checked':''}><span></span></label></div>`).join('')}
+   ${D.produits.length>80&&!pq?`<p class="empty">Utilisez la recherche pour trouver les autres produits.</p>`:''}</div>`;
+  const q=$('#pq');q.oninput=()=>{pq=q.value;const pos=q.selectionStart;vProd();const n=$('#pq');n.focus();n.setSelectionRange(pos,pos)};
+  const ok=id=>{const e=$('#s-'+id);if(e){e.textContent='Enregistré ✓';setTimeout(()=>e.textContent='',1500)}};
+  document.querySelectorAll('[data-prix]').forEach(i=>i.onchange=async()=>{const id=i.dataset.prix;try{const r=await api({action:'admin_produit',id,prix_dh:i.value});if(!r.ok)throw 0;D.produits.find(p=>p.id===id).p=i.value===''?null:+i.value;ok(id)}catch(e){toast('Erreur')}});
+  document.querySelectorAll('[data-var]').forEach(i=>i.onchange=async()=>{const id=i.dataset.var;try{const r=await api({action:'admin_produit',id,variantes:i.value});if(!r.ok)throw 0;ok(id)}catch(e){toast('Erreur')}});
+  document.querySelectorAll('[data-dispo]').forEach(i=>i.onchange=async()=>{const id=i.dataset.dispo;try{const r=await api({action:'admin_produit',id,dispo:i.checked});if(!r.ok)throw 0;D.produits.find(p=>p.id===id).dispo=i.checked;toast(i.checked?'Disponible ✓':'En rupture')}catch(e){i.checked=!i.checked;toast('Erreur')}});
+}
+function vStat(){
+  const ok=D.commandes.filter(c=>c.statut!=='annulée');
+  const ville={},prod={};
+  ok.forEach(c=>{ville[c.ville]=(ville[c.ville]||0)+c.total;String(c.produits).split('\n').forEach(l=>{const m=l.match(/^(\d+) × (.+?)(?: \(| —)/);if(m)prod[m[2]]=(prod[m[2]]||0)+ +m[1]})});
+  const top=(o,n)=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,n);
+  const bars=(arr,f)=>{const mx=Math.max(1,...arr.map(x=>x[1]));return `<div class="bars">${arr.map(([k,v])=>`<div class="bar"><div class="l"><span>${esc(k)}</span><span>${f(v)}</span></div><div class="t"><i style="width:${v/mx*100}%"></i></div></div>`).join('')||'<div class="empty">Pas encore de données</div>'}</div>`};
+  const avg=ok.length?ok.reduce((a,c)=>a+c.total,0)/ok.length:0;
+  $('#view').innerHTML=`<div class="pad"><div class="o"><div class="tt"><span>Panier moyen</span><span>${fmt(Math.round(avg))}</span></div></div>
+   <h3>Produits les plus commandés</h3>${bars(top(prod,10),v=>v+' u')}<h3>Chiffre par ville</h3>${bars(top(ville,8),fmt)}</div>`;
+}
+PIN?load():login();
+</script>
+</body>
+</html>

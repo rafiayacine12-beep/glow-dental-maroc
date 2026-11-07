@@ -1,0 +1,16 @@
+{
+  "name": "Glow Dental · Catalogue 2026",
+  "short_name": "Glow Dental",
+  "description": "Catalogue de matériel et consommables dentaires. Commande via WhatsApp.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F5F7FB",
+  "theme_color": "#0A2A66",
+  "lang": "fr",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
