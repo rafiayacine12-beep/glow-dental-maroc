@@ -23,7 +23,7 @@
  */
 const ADMIN_PIN = 'CHANGE_MOI';      // ⚠️ code dyal l-admin: beddlo GHIR hna f Apps Script (repo public)
 const SHOP = 'Glow Dental';
-const SITE_URL = 'https://glow-dental-maroc.vercel.app';
+const SITE_URL = 'https://glow-dental-maroc-93ik.vercel.app';
 const NOTIFY_EMAIL = '';             // khawi = email dyal compte Google li dar déploiement
 const WHATSAPP_PHONE = '';           // notification WhatsApp gratuite (CallMeBot): ex '212612345678'
 const WHATSAPP_APIKEY = '';          // apikey li katwsel men CallMeBot

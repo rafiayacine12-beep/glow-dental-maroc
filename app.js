@@ -4,7 +4,7 @@ const CONFIG = {
   whatsapp: "",   // numéro li katwsel 3lih les commandes, ex: "212612345678" (bla + w bla espaces)
   apiUrl: "",     // lien Apps Script (…/exec). Khawi = l-site khddam b data/products.json w bla Google Sheet
   address: "72 Rue Bni Drar, Tabriquet, Salé",
-  site: "https://glow-dental-maroc.vercel.app"
+  site: "https://glow-dental-maroc-93ik.vercel.app"
 };
 /* ================================= */
 
