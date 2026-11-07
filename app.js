@@ -263,24 +263,59 @@ function openProduct(id){
   const p=byId[id];if(!p)return;cur={id,vi:p.v?0:null,qty:1};renderProduct();openSheet('p');
   history.replaceState(null,'','#p-'+id);
 }
+function packOf(name){const m=name.match(/\(([^)]*\d[^)]*)\)\s*$/);return m?m[1]:''}
 function renderProduct(){
   const p=byId[cur.id];
   const pr=p.v?p.v[cur.vi].p:p.p;
   const link=CONFIG.site+'/#p-'+p.id;
-  $('#pBody').innerHTML=`<div class="pimg"><img alt="${esc(p.name)}" src="${esc(imgOf(p))}"></div>
-   <div class="pcat">${catName(p.cat)}</div><div class="pname">${esc(p.name)}</div>
-   <div class="pprice">${pr==null?'Prix sur demande':fmt(pr)} ${p.u&&pr!=null?`<small>/ ${esc(p.u.replace('la ',''))}</small>`:''}</div>
-   ${!p.dispo?`<p class="note" style="color:#B42318;font-weight:700">Ce produit est momentanément en rupture de stock.</p>`:''}
-   ${p.v?`<div class="lbl">Choisir une option</div><div class="vars">${p.v.map((v,i)=>`<button class="var ${i===cur.vi?'on':''}" data-vi="${i}">${esc(v.l)}<span>${fmt(v.p)}</span></button>`).join('')}</div>`:''}
-   ${pr==null?`<p class="note">Le prix de ce produit est communiqué sur demande. Ajoutez-le au panier : nous vous répondrons avec le tarif sur WhatsApp.</p>`:''}
-   <a class="share" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(p.name+' — '+(pr==null?'prix sur demande':fmt(pr))+'\n'+link)}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>Partager ce produit</a>`;
+  const inCart=qtyOf(p.id);
+  const cond=packOf(p.name)||(p.u?p.u.replace('la ','À la '):'')||(p.v?`${p.v.length} options`:'Unité');
+  const sim=P.filter(x=>x.cat===p.cat&&x.id!==p.id&&x.dispo);
+  const start=Math.max(0,P.indexOf(p)-3);const near=[...sim.filter(x=>P.indexOf(x)>=start),...sim].filter((x,i,a)=>a.indexOf(x)===i).slice(0,10);
+  const waTxt=`Bonjour ${CONFIG.shop}, je suis intéressé(e) par :\n• ${p.name}${p.v?` — ${p.v[cur.vi].l}`:''}\n• Quantité : ${cur.qty}\n• Prix : ${pr==null?'sur demande':fmt(pr)}\n${link}`;
+  $('#pBody').innerHTML=`
+   <div class="fp-img" data-zoom><img alt="${esc(p.name)}" src="${esc(imgOf(p))}">
+     <span class="fp-zoom"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8v6M8 11h6"/></svg></span>
+     ${!p.dispo?'<span class="fp-out">Rupture de stock</span>':''}</div>
+   <div class="fp-badges"><span class="fp-b ${p.dispo?'ok':'no'}"><i></i>${p.dispo?'Disponible':'Indisponible'}</span><button class="fp-b cat" data-gocat="${p.cat}">${(CATS.find(c=>c.id===p.cat)||{}).e||''} ${catName(p.cat)} ›</button></div>
+   <h2 class="fp-name">${esc(p.name)}</h2>
+   <div class="fp-ref">Réf. ${p.id.toUpperCase()}${inCart?` · <b style="color:var(--mint)">${inCart} dans le panier</b>`:''}</div>
+   <div class="fp-price">${pr==null?'<span style="font-size:20px">Prix sur demande</span>':fmt(pr)}${p.u&&pr!=null?`<small> / ${esc(p.u.replace('la ',''))}</small>`:''}${p.v?`<em>Prix selon l'option choisie</em>`:''}</div>
+   ${p.v?`<div class="lbl">Option : <span style="color:var(--blue)">${esc(p.v[cur.vi].l)}</span></div><div class="vars">${p.v.map((v,i)=>`<button class="var ${i===cur.vi?'on':''}" data-vi="${i}">${esc(v.l)}<span>${fmt(v.p)}</span></button>`).join('')}</div>`:''}
+   ${pr==null?`<p class="note">Le tarif de ce produit vous sera communiqué sur WhatsApp. Vous pouvez l'ajouter au panier dès maintenant.</p>`:''}
+   <div class="fp-info">
+     <div><span>Catégorie</span><b>${catName(p.cat)}</b></div>
+     <div><span>Conditionnement</span><b>${esc(cond)}</b></div>
+     <div><span>Référence</span><b>${p.id.toUpperCase()}</b></div>
+     <div><span>Commande</span><b>Via WhatsApp</b></div>
+   </div>
+   <div class="fp-acts">
+     <a class="fp-a wa" target="_blank" rel="noopener" href="${waUrl(waTxt)}">${WA_ICON}Commander ce produit sur WhatsApp</a>
+     <div class="row" style="gap:8px">
+       <a class="fp-a ghost2" target="_blank" rel="noopener" href="${waUrl(`Bonjour, j'ai une question sur : ${p.name}\n${link}`)}">💬 Poser une question</a>
+       <button class="fp-a ghost2" data-share>↗ Partager</button>
+     </div>
+   </div>
+   <div class="fp-steps"><div><b>1</b>Ajoutez au panier</div><div><b>2</b>Validez vos coordonnées</div><div><b>3</b>Envoyez sur WhatsApp</div></div>
+   ${near.length?`<div class="lbl" style="margin-top:22px;font-size:15px;color:var(--ink)">Produits similaires</div>
+   <div class="fp-sim">${near.map(x=>`<button class="fp-s" data-sim="${x.id}"><span><img alt="" loading="lazy" src="${esc(imgOf(x))}"></span><em>${esc(x.name)}</em><b>${x.v?'dès '+fmt(x._min):x.p==null?'Sur demande':fmt(x.p)}</b></button>`).join('')}</div>`:''}`;
+  $('#pBody').scrollTop=0;
   $('#pQty').textContent=cur.qty;
   $('#pAdd').disabled=!p.dispo;$('#pAdd').style.opacity=p.dispo?'':'.45';
-  $('#pAdd').textContent=!p.dispo?'Indisponible':pr==null?'Ajouter (prix sur demande)':`Ajouter · ${fmt(pr*cur.qty)}`;
+  $('#pAdd').innerHTML=!p.dispo?'Indisponible':pr==null?'Ajouter au panier':`<span>Ajouter</span><span class="fp-tot">${fmt(pr*cur.qty)}</span>`;
 }
-$('#pBody').addEventListener('click',e=>{const b=e.target.closest('[data-vi]');if(!b)return;cur.vi=+b.dataset.vi;renderProduct()});
-$('#pMinus').addEventListener('click',()=>{if(cur.qty>1){cur.qty--;renderProduct()}});
-$('#pPlus').addEventListener('click',()=>{cur.qty++;renderProduct()});
+function renderProductKeep(){const y=$('#pBody').scrollTop;renderProduct();$('#pBody').scrollTop=y}
+$('#pBody').addEventListener('click',async e=>{
+  const v=e.target.closest('[data-vi]');if(v){cur.vi=+v.dataset.vi;renderProductKeep();return}
+  const s=e.target.closest('[data-sim]');if(s){const p=byId[s.dataset.sim];cur={id:p.id,vi:p.v?0:null,qty:1};renderProduct();history.replaceState(null,'','#p-'+p.id);return}
+  const c=e.target.closest('[data-gocat]');if(c){closeSheets(true);go('cat-'+c.dataset.gocat);return}
+  if(e.target.closest('[data-zoom]')){const p=byId[cur.id];const z=document.createElement('div');z.className='zoom';z.innerHTML=`<img alt="" src="${esc(imgOf(p))}"><button class="x" aria-label="Fermer">×</button>`;z.onclick=()=>z.remove();document.body.appendChild(z);return}
+  if(e.target.closest('[data-share]')){const p=byId[cur.id];const url=CONFIG.site+'/#p-'+p.id;
+    try{if(navigator.share){await navigator.share({title:p.name,url});return}}catch(x){}
+    try{await navigator.clipboard.writeText(url);toast('Lien copié ✓')}catch(x){location.href='https://wa.me/?text='+encodeURIComponent(p.name+'\n'+url)}}
+});
+$('#pMinus').addEventListener('click',()=>{if(cur.qty>1){cur.qty--;renderProductKeep()}});
+$('#pPlus').addEventListener('click',()=>{cur.qty++;renderProductKeep()});
 $('#pAdd').addEventListener('click',()=>{addToCart(cur.id,cur.vi,cur.qty);closeSheets()});
 
 /* ---------- Order workflow: panier → coordonnées → confirmation → envoyée ---------- */
