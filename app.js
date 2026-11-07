@@ -51,23 +51,14 @@ const qtyOf=id=>cart.filter(i=>i.id===id).reduce((a,i)=>a+i.qty,0);
 
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('on'),1700)}
 
-/* ---------- Chips ---------- */
-function renderChips(){
-  const counts={};P.forEach(p=>counts[p.cat]=(counts[p.cat]||0)+1);
-  const all=[{id:'all',n:'Tout',e:'🗂️'},...CATS];
-  $('#chips').innerHTML=all.map(c=>`<button class="chip ${state.cat===c.id?'on':''}" data-cat="${c.id}"><i>${c.e}</i>${c.n}<em>${c.id==='all'?P.length:counts[c.id]||0}</em></button>`).join('');
-}
-$('#chips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;state.cat=b.dataset.cat;renderChips();renderList();
-  b.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});
-  const top=$('.cats').offsetTop;if(window.scrollY>top)window.scrollTo({top:top,behavior:'smooth'})});
-
-/* ---------- List ---------- */
+/* ---------- Cards ---------- */
 function priceHTML(p){
   if(p.v) return `<div class="price"><small>dès</small>${fmt(p._min)}</div>`;
   if(p.p==null) return `<div class="price ask">Sur demande</div>`;
   return `<div class="price">${p.u?`<small>${esc(p.u)}</small>`:''}${fmt(p.p)}</div>`;
 }
 function cardHTML(p){
+  if(!p)return'';
   const q=qtyOf(p.id);
   const ctrl=!p.dispo?`<button class="add" disabled aria-label="Indisponible"><svg width="18" height="18" viewBox="0 0 24 24" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>`
     :(q&&!p.v)?`<div class="mini" data-stop><button data-dec="${p.id}" aria-label="Moins">−</button><b>${q}</b><button data-inc="${p.id}" aria-label="Plus">+</button></div>`
@@ -77,42 +68,160 @@ function cardHTML(p){
    <div class="ph"><img loading="lazy" decoding="async" alt="${esc(p.name)}" src="${esc(imgOf(p))}"></div>
    <div class="bd"><div class="nm">${esc(p.name)}</div><div class="ft">${priceHTML(p)}${ctrl}</div></div></article>`;
 }
-function filtered(){
-  let r=P;
-  if(state.cat!=='all') r=r.filter(p=>p.cat===state.cat);
-  if(state.q){const ws=norm(state.q).split(/\s+/).filter(Boolean);r=r.filter(p=>ws.every(w=>p._s.includes(w)))}
-  if(state.sort){r=[...r];const big=1e9;
-    if(state.sort==='asc')r.sort((a,b)=>(a._min??big)-(b._min??big));
-    if(state.sort==='desc')r.sort((a,b)=>(b._min??-1)-(a._min??-1));
-    if(state.sort==='az')r.sort((a,b)=>a.name.localeCompare(b.name,'fr'));}
+function sortList(r,s){
+  if(!s)return r;r=[...r];const big=1e9;
+  if(s==='asc')r.sort((a,b)=>(a._min??big)-(b._min??big));
+  if(s==='desc')r.sort((a,b)=>(b._min??-1)-(a._min??-1));
+  if(s==='az')r.sort((a,b)=>a.name.localeCompare(b.name,'fr'));
   return r;
 }
-function renderList(){
-  const r=filtered();
-  $('#resInfo').textContent=`${r.length} produit${r.length>1?'s':''}`;
-  let html='';
-  if(!r.length){html=`<div class="empty"><b>Aucun produit trouvé</b>Essayez un autre mot ou une autre catégorie.<br><br><a class="share" href="${waUrl('Bonjour, je cherche le produit : '+state.q)}" target="_blank" rel="noopener">Demander sur WhatsApp</a></div>`}
-  else if(state.cat==='all'&&!state.q&&!state.sort){
-    CATS.forEach(c=>{const it=r.filter(p=>p.cat===c.id);if(!it.length)return;
-      html+=`<section class="sec"><h2>${c.e} ${c.n} <span>${it.length}</span></h2><div class="grid">${it.map(cardHTML).join('')}</div></section>`});
-  } else html=`<section class="sec"><div class="grid" style="margin-top:12px">${r.map(cardHTML).join('')}</div></section>`;
-  $('#list').innerHTML=html;
-  $('#stCount').textContent=`${P.length} produits`;
+function searchList(q){const ws=norm(q).split(/\s+/).filter(Boolean);return P.filter(p=>ws.every(w=>p._s.includes(w)))}
+
+/* ---------- Home content ---------- */
+const CAT_IMG={hyg:'p310',fra:'p510',emp:'p603',endo:'p800',fond:'p1031',obt:'p1200',pro:'p1420',equ:'p1500',ort:'p1800',ins:'p1911'};
+const SLIDES=[
+ {c:'s1',k:'Équipements',t:'Équipez votre cabinet',img:'p1702',go:'cat-equ',cta:'Découvrir'},
+ {c:'s2',k:'Usage unique',t:'Hygiène & stérilisation au quotidien',img:'p310',go:'cat-hyg',cta:'Voir les produits'},
+ {c:'s4',k:'Packs cabinet',t:'Commandez un pack complet en 1 clic',img:'p603',go:'#packs',cta:'Voir les packs'},
+ {c:'s3',k:'Esthétique',t:'Blanchiment & prophylaxie',img:'p1431',go:'cat-pro',cta:'Découvrir'}
+];
+const MUST=['p310','p302','p331','p320','p322','p1113','p1103','p800','p821','p831','p910','p1012'];
+const EQUIP=['p1702','p1633','p1631','p1610','p1501','p1733','p1602','p1530','p1711'];
+const PACKS=[
+ {id:'hyg',n:'Pack Hygiène cabinet',d:'Gants, masques, charlottes, gobelets, serviettes, canules et lingettes.',items:[['p310',null,2],['p302',null,1],['p301',null,1],['p322',null,1],['p321',null,1],['p320',null,1],['p403',null,1]]},
+ {id:'endo',n:'Pack Endodontie',d:'Limes, tire-nerfs, cônes gutta/papier, EDTA, aiguilles d’irrigation et lentulo.',items:[['p800',null,2],['p801',null,1],['p821',null,1],['p910',null,1],['p831',null,1],['p803',null,1]]},
+ {id:'emp',n:'Pack Empreinte',d:'Kit silicone, alginate, porte-empreintes, bol et spatule.',items:[['p600',null,1],['p613',null,1],['p703',null,1],['p701',null,1],['p702',null,1]]},
+ {id:'ster',n:'Pack Stérilisation',d:'Rouleau 7,5 cm, désinfectant instruments, spray et surfaces.',items:[['p431',1,1],['p410',null,1],['p422',null,1],['p423',null,1]]}
+];
+const packItems=pk=>pk.items.filter(([id,vi])=>byId[id]&&byId[id].dispo&&(vi==null||byId[id].v&&byId[id].v[vi]));
+const packTotal=pk=>packItems(pk).reduce((s,[id,vi,q])=>{const p=byId[id];const u=p.v?p.v[vi].p:p.p;return s+(u||0)*q},0);
+
+/* ---------- Router ---------- */
+let route='',viewState={sort:'',q:''},recent=ls.get('gd_recent',[]);
+function go(r){if(r==='#packs'){const el=$('#packs');el&&el.scrollIntoView({behavior:'smooth',block:'start'});return}location.hash=r?r:'accueil'}
+function currentRoute(){const h=location.hash.slice(1);return h.startsWith('p-')?route:(h==='accueil'?'':h)}
+function render(){
+  route=currentRoute();
+  const v=$('#view');
+  if(route==='categories')v.innerHTML=viewCategories();
+  else if(route.startsWith('cat-'))v.innerHTML=viewCategory(route.slice(4));
+  else if(route==='recherche')v.innerHTML=viewSearch();
+  else if(route==='commandes')v.innerHTML=viewOrders();
+  else v.innerHTML=viewHome();
+  document.querySelectorAll('#tabbar [data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===(route.startsWith('cat-')?'categories':route==='recherche'?'':route)));
+  afterRender();
 }
-function refreshCards(){renderList();updateCartUI()}
-$('#list').addEventListener('click',e=>{
-  const a=e.target.closest('[data-add]'),inc=e.target.closest('[data-inc]'),dec=e.target.closest('[data-dec]');
-  if(a){const p=byId[a.dataset.add]; if(p.v) return openProduct(p.id); addToCart(p.id,null,1); return}
+function rerenderKeepScroll(){const y=window.scrollY;const sx=[...document.querySelectorAll('.strip,.slider')].map(s=>s.scrollLeft);render();
+  document.querySelectorAll('.strip,.slider').forEach((s,i)=>{if(sx[i]!=null)s.scrollLeft=sx[i]});window.scrollTo(0,y)}
+function afterRender(){
+  const q=$('#sq');
+  if(q){q.value=viewState.q;q.addEventListener('input',()=>{clearTimeout(q._t);q._t=setTimeout(()=>{viewState.q=q.value.trim();$('#sres').innerHTML=searchResults()},140)});
+    q.addEventListener('keydown',e=>{if(e.key==='Enter'){q.blur();addRecent(q.value)}});
+    if(!viewState.q)setTimeout(()=>q.focus(),60)}
+  const sl=$('.slider');if(sl){const dots=document.querySelectorAll('.dots i');
+    sl.addEventListener('scroll',()=>{const i=Math.round(sl.scrollLeft/(sl.firstElementChild.offsetWidth+12));dots.forEach((d,k)=>d.classList.toggle('on',k===i))},{passive:true});
+    clearInterval(window._sl);window._sl=setInterval(()=>{if(!document.body.contains(sl)||sheetOpen)return;const w=sl.firstElementChild.offsetWidth+12;const n=Math.round(sl.scrollLeft/w)+1;sl.scrollTo({left:(n>=SLIDES.length?0:n)*w,behavior:'smooth'})},4500)}
+  const so=$('#sort');if(so)so.onchange=()=>{viewState.sort=so.value;rerenderKeepScroll()};
+}
+function addRecent(q){q=q.trim();if(!q)return;recent=[q,...recent.filter(x=>x.toLowerCase()!==q.toLowerCase())].slice(0,6);ls.set('gd_recent',recent)}
+window.addEventListener('hashchange',()=>{const h=location.hash;if(h.startsWith('#p-')){openFromHash();return}
+  if(sheetOpen==='p')closeSheets(true);const prev=route;viewState.sort='';if(currentRoute()!=='recherche')viewState.q='';render();if(prev!==route)window.scrollTo(0,0)});
+
+const BACK=`<button class="back" data-back aria-label="Retour"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#344054" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>`;
+const SORT=()=>`<select id="sort" aria-label="Trier"><option value="">Trier</option><option value="asc" ${viewState.sort==='asc'?'selected':''}>Prix ↑</option><option value="desc" ${viewState.sort==='desc'?'selected':''}>Prix ↓</option><option value="az" ${viewState.sort==='az'?'selected':''}>A → Z</option></select>`;
+const SEARCH_ICON='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#98A2B3" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
+const LOGO='<div class="logo" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M7.2 3.2c1.6 0 2.9.8 4.8.8s3.2-.8 4.8-.8c2.6 0 4.2 2.2 4.2 5 0 2.3-.9 3.8-1.5 6-.7 2.5-1 6.6-3 6.6-1.8 0-1.6-4.6-4.5-4.6s-2.7 4.6-4.5 4.6c-2 0-2.3-4.1-3-6.6C3.9 12 3 10.5 3 8.2c0-2.8 1.6-5 4.2-5Z" fill="#fff"/><path d="M17.5 5.3l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z" fill="#16B88A"/></svg></div>';
+
+function viewHome(){
+  const petits=sortList(P.filter(p=>p.dispo&&p._min!=null&&p._min<=30),'asc').slice(0,12);
+  const greet=client.nom?`Bonjour ${esc(client.nom.split(' ').slice(0,2).join(' '))} 👋`:'Bienvenue 👋';
+  return `<header class="top"><div class="brand">${LOGO}<div><h1>${esc(CONFIG.shop)}</h1><small>Catalogue 2026</small></div>
+     <div class="topacts">${CONFIG.whatsapp?`<a class="cartbtn" href="https://wa.me/${CONFIG.whatsapp}" target="_blank" rel="noopener" aria-label="WhatsApp">${WA_ICON}</a>`:''}</div></div>
+   <div class="hello"><span>${greet}</span><b>Tout votre matériel dentaire, en un seul endroit</b></div>
+   <button class="search fake" data-go="recherche" style="width:100%">${SEARCH_ICON}<span>Rechercher parmi ${P.length} produits…</span></button></header>
+  <div class="install" id="install" ${deferred&&!ls.get('gd_noinstall',false)?'':'hidden'}><div><b>Installer l'application</b>Accès rapide depuis votre écran d'accueil.</div><button data-install>Installer</button></div>
+  <div class="slider">${SLIDES.map(s=>`<button class="slide ${s.c}" data-go="${s.go}"><div class="tx"><small>${s.k}</small><b>${s.t}</b><span class="cta">${s.cta} →</span></div><div class="im"><img alt="" src="${esc(imgOf(byId[s.img]||{id:s.img}))}"></div></button>`).join('')}</div>
+  <div class="dots">${SLIDES.map((s,i)=>`<i class="${i?'':'on'}"></i>`).join('')}</div>
+  <section class="hsec"><div class="hhead"><h3>Catégories</h3><button data-go="categories">Tout voir</button></div>
+   <div class="circles">${CATS.map(c=>`<button class="circ" data-go="cat-${c.id}"><div class="ci2"><img alt="" loading="lazy" src="img/${CAT_IMG[c.id]}.webp"></div>${c.n.replace(' & ','<br>& ')}</button>`).join('')}</div></section>
+  <section class="hsec"><div class="hhead"><h3>⭐ Les incontournables</h3><button data-go="cat-hyg">Plus</button></div><div class="strip">${MUST.map(id=>cardHTML(byId[id])).join('')}</div></section>
+  <section class="hsec" id="packs"><div class="hhead"><h3>📦 Packs cabinet</h3></div>
+   <div class="packs">${PACKS.map(pk=>{const it=packItems(pk);return `<div class="pack"><div class="pi">${it.slice(0,4).map(([id])=>`<span><img alt="" loading="lazy" src="${esc(imgOf(byId[id]))}"></span>`).join('')}${it.length>4?`<em>+${it.length-4}</em>`:''}</div>
+     <b>${pk.n}</b><p>${pk.d}</p><div class="pf"><div class="price"><small>${it.reduce((s,x)=>s+x[2],0)} articles</small>${fmt(packTotal(pk))}</div><button data-pack="${pk.id}">Ajouter le pack</button></div></div>`}).join('')}</div></section>
+  <section class="hsec"><div class="hhead"><h3>⚙️ Équipements</h3><button data-go="cat-equ">Tout voir</button></div><div class="strip">${EQUIP.map(id=>cardHTML(byId[id])).join('')}</div></section>
+  <section class="hsec"><div class="hhead"><h3>💸 Petits prix</h3><button data-go="cat-fra">Plus</button></div><div class="strip">${petits.map(cardHTML).join('')}</div></section>
+  <div class="trust"><div><i>📲</i>Commande via WhatsApp</div><div><i>🧾</i>Suivi de commande</div><div><i>💰</i>Prix clairs en DH</div></div>
+  <div class="foot"><b>${esc(CONFIG.shop)}</b> — matériel et consommables dentaires<br>${esc(CONFIG.address)}<br>${CONFIG.whatsapp?`WhatsApp : <a href="https://wa.me/${CONFIG.whatsapp}" target="_blank" rel="noopener">+${CONFIG.whatsapp}</a><br>`:''}
+   <div style="margin-top:8px;font-size:12px;color:#98A2B3">Prix indicatifs en dirhams (DH), sous réserve de disponibilité. Photos non contractuelles.</div>
+   <a href="admin.html" style="color:#98A2B3;font-size:11px;text-decoration:none">Espace admin</a></div>`;
+}
+function viewCategories(){
+  const counts={};P.forEach(p=>counts[p.cat]=(counts[p.cat]||0)+1);
+  return `<div class="appbar"><h2 style="padding-left:6px">Catégories</h2><button class="back" data-go="recherche" aria-label="Rechercher">${SEARCH_ICON}</button></div>
+   <div class="cgrid">${CATS.map(c=>`<button class="cbox" data-go="cat-${c.id}"><div class="cimg"><img alt="" loading="lazy" src="img/${CAT_IMG[c.id]}.webp"></div><b>${c.e} ${c.n}</b><span>${counts[c.id]||0} produits</span></button>`).join('')}</div>`;
+}
+function viewCategory(id){
+  const c=CATS.find(x=>x.id===id);if(!c)return viewCategories();
+  const list=sortList(P.filter(p=>p.cat===id),viewState.sort);
+  return `<div class="appbar">${BACK}<h2>${c.e} ${c.n}</h2>${SORT()}</div>
+   <div class="chips" style="padding-top:12px">${CATS.map(x=>`<button class="chip ${x.id===id?'on':''}" data-go="cat-${x.id}"><i>${x.e}</i>${x.n}</button>`).join('')}</div>
+   <section class="sec"><div style="font-size:13px;color:var(--muted);margin:10px 0">${list.length} produits</div><div class="grid">${list.map(cardHTML).join('')}</div></section>`;
+}
+function searchResults(){
+  const q=viewState.q;
+  if(!q)return `<div class="recent">${recent.length?`<h4>Recherches récentes</h4><div class="chips">${recent.map(r=>`<button class="chip" data-q="${esc(r)}">🕘 ${esc(r)}</button>`).join('')}</div><br>`:''}
+    <h4>Suggestions</h4><div class="chips">${['Gants','Turbine','Composite','Alginate','Limes','Détartreur','Blanchiment','Désinfectant'].map(r=>`<button class="chip" data-q="${r}">${r}</button>`).join('')}</div></div>`;
+  const r=sortList(searchList(q),viewState.sort);
+  if(!r.length)return `<div class="empty"><b>Aucun produit trouvé</b>Essayez un autre mot.<br><br><a class="share" href="${waUrl('Bonjour, je cherche le produit : '+q)}" target="_blank" rel="noopener">Demander sur WhatsApp</a></div>`;
+  return `<section class="sec"><div style="font-size:13px;color:var(--muted);margin:10px 0">${r.length} résultat${r.length>1?'s':''}</div><div class="grid">${r.map(cardHTML).join('')}</div></section>`;
+}
+function viewSearch(){
+  return `<div class="appbar">${BACK}<label class="search">${SEARCH_ICON}<input id="sq" type="search" placeholder="Gants, turbine, composite…" autocomplete="off" enterkeyhint="search"></label></div><div id="sres">${searchResults()}</div>`;
+}
+function viewOrders(){
+  return `<div class="pagehead"><h1>Mes commandes</h1><p>Suivez le statut de vos commandes et recommandez en 1 clic.</p></div><div class="sec" id="olist">${ordersHTML()}</div>`;
+}
+function ordersHTML(){
+  if(!orders.length)return `<div class="empty"><div style="font-size:40px">📋</div><b>Aucune commande</b>Vos commandes et leur statut apparaîtront ici.<br><br><button class="primary" style="max-width:240px;margin:0 auto" data-go="">Commencer mes achats</button></div>`;
+  return orders.map((o,k)=>`<div class="ord" style="background:#fff"><div class="l1"><span>${esc(o.id)}</span><span class="st ${esc(o.statut)}">${esc(o.statut)}</span></div>
+    <div class="l2"><span>${new Date(o.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})} · ${o.n} article${o.n>1?'s':''}</span><b style="color:var(--navy)">${fmt(o.total)}</b></div>
+    ${o.items&&o.items.length?`<button class="ghost" style="width:100%;height:40px;margin-top:10px" data-reorder="${k}">↻ Commander à nouveau</button>`:''}</div>`).join('')+
+    `<p class="note" style="text-align:center">Le statut est mis à jour par ${esc(CONFIG.shop)} après confirmation.</p>`;
+}
+
+/* ---------- Global clicks ---------- */
+document.addEventListener('click',e=>{
+  const t=e.target;
+  if(t.closest('.sheet'))return;
+  const a=t.closest('[data-add]'),inc=t.closest('[data-inc]'),dec=t.closest('[data-dec]');
+  if(a){const p=byId[a.dataset.add];if(p.v)return openProduct(p.id);addToCart(p.id,null,1);return}
   if(inc){changeQty(inc.dataset.inc,null,1);return}
   if(dec){changeQty(dec.dataset.dec,null,-1);return}
-  if(e.target.closest('[data-stop]'))return;
-  const c=e.target.closest('[data-open]'); if(c) openProduct(c.dataset.open);
+  if(t.closest('[data-stop]'))return;
+  const pk=t.closest('[data-pack]');if(pk){addPack(pk.dataset.pack);return}
+  const ro=t.closest('[data-reorder]');if(ro){reorder(+ro.dataset.reorder);return}
+  const qq=t.closest('[data-q]');if(qq){viewState.q=qq.dataset.q;addRecent(viewState.q);const i=$('#sq');if(i)i.value=viewState.q;$('#sres').innerHTML=searchResults();return}
+  if(t.closest('[data-install]')){doInstall();return}
+  if(t.closest('[data-back]')){if(history.length>1)history.back();else go('');return}
+  if(t.closest('[data-cart]')){step=1;renderCart();openSheet('c');return}
+  const g=t.closest('[data-go]');if(g){go(g.dataset.go);return}
+  const c=t.closest('[data-open]');if(c){openProduct(c.dataset.open)}
 });
-
-/* ---------- Search & sort ---------- */
-let qt;$('#q').addEventListener('input',e=>{clearTimeout(qt);qt=setTimeout(()=>{state.q=e.target.value.trim();$('#clr').hidden=!state.q;renderList()},120)});
-$('#clr').addEventListener('click',e=>{e.preventDefault();$('#q').value='';state.q='';$('#clr').hidden=true;renderList()});
-$('#sort').addEventListener('change',e=>{state.sort=e.target.value;renderList()});
+function addPack(id){
+  const pk=PACKS.find(x=>x.id===id);const it=packItems(pk);
+  it.forEach(([pid,vi,q])=>{const k=keyOf(pid,vi);const f=cart.find(x=>x.key===k);if(f)f.qty+=q;else cart.push({key:k,id:pid,vi,qty:q})});
+  save();refreshCards();toast(`${pk.n} ajouté ✓`);
+}
+function reorder(k){
+  const o=orders[k];let n=0;
+  o.items.forEach(i=>{if(byId[i.id]&&byId[i.id].dispo){const kk=keyOf(i.id,i.vi);const f=cart.find(x=>x.key===kk);if(f)f.qty+=i.qty;else cart.push({key:kk,id:i.id,vi:i.vi,qty:i.qty});n++}});
+  save();refreshCards();toast(n?'Produits ajoutés au panier ✓':'Produits indisponibles');if(n){step=1;renderCart();openSheet('c')}
+}
+function refreshCards(){
+  if(route==='recherche'){const r=$('#sres');if(r){const y=window.scrollY;r.innerHTML=searchResults();window.scrollTo(0,y)}}
+  else if(route!=='commandes')rerenderKeepScroll();
+  updateCartUI();
+}
 
 /* ---------- Cart ops ---------- */
 const keyOf=(id,vi)=>id+'|'+(vi??'');
@@ -131,16 +240,15 @@ function changeQty(id,vi,d,key){
 function updateCartUI(){
   const n=cartCount();
   $('#badge').hidden=!n;$('#badge').textContent=n;
-  $('#fabQ').textContent=n;$('#fabT').textContent=fmt(cartTotal())+(hasAsk()?' +':'');
-  $('#fab').classList.toggle('show',n>0&&!sheetOpen);
+  $('#tabCart').textContent=n?fmt(cartTotal()):'Panier';
 }
 
 /* ---------- Sheets ---------- */
 let sheetOpen=null;
-const SHEET={p:'#pSheet',c:'#cSheet',o:'#oSheet'};
+const SHEET={p:'#pSheet',c:'#cSheet'};
 function openSheet(w){closeSheets(true);sheetOpen=w;$('#scrim').classList.add('on');$(SHEET[w]).classList.add('on');document.body.style.overflow='hidden';updateCartUI()}
 function closeSheets(silent){
-  if(sheetOpen==='p'&&location.hash.startsWith('#p-')&&!silent)history.replaceState(null,'',location.pathname);
+  if(sheetOpen==='p'&&location.hash.startsWith('#p-')&&!silent)history.replaceState(null,'',route?'#'+route:location.pathname);
   sheetOpen=null;$('#scrim').classList.remove('on');Object.values(SHEET).forEach(s=>$(s).classList.remove('on'));document.body.style.overflow='';updateCartUI()}
 $('#scrim').addEventListener('click',()=>closeSheets());
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeSheets()));
@@ -177,8 +285,6 @@ $('#pAdd').addEventListener('click',()=>{addToCart(cur.id,cur.vi,cur.qty);closeS
 
 /* ---------- Order workflow: panier → coordonnées → confirmation → envoyée ---------- */
 let step=1, lastOrder=null, sending=false;
-$('#openCart').addEventListener('click',()=>{step=1;renderCart();openSheet('c')});
-$('#fab').addEventListener('click',()=>{step=1;renderCart();openSheet('c')});
 
 function waUrl(text){const t=encodeURIComponent(text);return CONFIG.whatsapp?`https://wa.me/${CONFIG.whatsapp}?text=${t}`:`https://wa.me/?text=${t}`}
 function stepsHTML(){return `<div class="steps">${[1,2,3].map(i=>`<div class="${i<=step?'on':''}"></div>`).join('')}</div>`}
@@ -278,46 +384,32 @@ $('#cBody').addEventListener('click',e=>{
 });
 const WA_ICON='<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>';
 
-/* ---------- Mes commandes (suivi + recommander) ---------- */
-$('#openOrders').addEventListener('click',()=>{renderOrders();openSheet('o');refreshStatuses()});
-function renderOrders(){
-  const b=$('#oBody');
-  if(!orders.length){b.innerHTML=`<div class="empty"><div style="font-size:40px">📋</div><b>Aucune commande</b>Vos commandes et leur statut apparaîtront ici.</div>`;return}
-  b.innerHTML=orders.map((o,k)=>`<div class="ord"><div class="l1"><span>${esc(o.id)}</span><span class="st ${esc(o.statut)}">${esc(o.statut)}</span></div>
-    <div class="l2"><span>${new Date(o.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})} · ${o.n} article${o.n>1?'s':''}</span><b style="color:var(--navy)">${fmt(o.total)}</b></div>
-    ${o.items&&o.items.length?`<button class="ghost" style="width:100%;height:40px;margin-top:10px" data-reorder="${k}">↻ Commander à nouveau</button>`:''}</div>`).join('')+
-    `<p class="note" style="text-align:center">Le statut est mis à jour par ${esc(CONFIG.shop)} après confirmation.</p>`;
-}
-$('#oBody').addEventListener('click',e=>{const b=e.target.closest('[data-reorder]');if(!b)return;
-  const o=orders[+b.dataset.reorder];let n=0;
-  o.items.forEach(i=>{if(byId[i.id]&&byId[i.id].dispo){const k=keyOf(i.id,i.vi);const f=cart.find(x=>x.key===k);if(f)f.qty+=i.qty;else cart.push({key:k,id:i.id,vi:i.vi,qty:i.qty});n++}});
-  save();refreshCards();toast(n?'Produits ajoutés au panier ✓':'Produits indisponibles');if(n){step=1;renderCart();openSheet('c')}});
+/* ---------- Statuts commandes ---------- */
 async function refreshStatuses(){
   if(!CONFIG.apiUrl||!orders.length)return;
   await Promise.all(orders.slice(0,10).filter(o=>o.synced).map(async o=>{try{
     const r=await fetch(`${CONFIG.apiUrl}?action=status&id=${encodeURIComponent(o.id)}&tel=${encodeURIComponent(o.tel)}`,{cache:'no-store'}).then(x=>x.json());
     if(r&&r.ok)o.statut=r.statut}catch(e){}}));
-  save();if(sheetOpen==='o')renderOrders();
+  save();const l=$('#olist');if(l)l.innerHTML=ordersHTML();
 }
-
 /* ---------- PWA ---------- */
 let deferred=null;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(!ls.get('gd_noinstall',false))$('#install').hidden=false});
-$('#installBtn').addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(e){}deferred=null;$('#install').hidden=true;ls.set('gd_noinstall',true)});
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;const b=$('#install');if(b&&!ls.get('gd_noinstall',false))b.hidden=false});
+async function doInstall(){if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(e){}deferred=null;const b=$('#install');if(b)b.hidden=true;ls.set('gd_noinstall',true)}
 if('serviceWorker' in navigator&&location.protocol==='https:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 
 /* ---------- Init ---------- */
-function openFromHash(){const m=location.hash.match(/^#p-(\w+)/);if(m&&byId[m[1]])openProduct(m[1])}
-window.addEventListener('hashchange',openFromHash);
+function openFromHash(){const m=location.hash.match(/^#p-(\w+)/);if(m&&byId[m[1]]&&!(sheetOpen==='p'&&cur.id===m[1]))openProduct(m[1])}
 async function init(){
-  $('#footWa').innerHTML=CONFIG.whatsapp?`WhatsApp : <a href="https://wa.me/${CONFIG.whatsapp}" target="_blank" rel="noopener">+${CONFIG.whatsapp}</a>`:'';
   let list=null;
   try{list=await fetch('data/products.json').then(r=>r.json())}catch(e){}
-  if(list){setProducts(list);renderChips();renderList();updateCartUI();openFromHash()}
+  if(list){setProducts(list);render();updateCartUI();openFromHash()}
   if(CONFIG.apiUrl){
     try{const r=await fetch(CONFIG.apiUrl+'?action=produits',{cache:'no-store'}).then(x=>x.json());
-      if(r&&r.ok&&r.produits&&r.produits.length){setProducts(r.produits);save();renderChips();renderList();updateCartUI();if(!list)openFromHash()}}catch(e){}
+      if(r&&r.ok&&r.produits&&r.produits.length){setProducts(r.produits);save();rerenderKeepScroll();updateCartUI();if(!list)openFromHash()}}catch(e){}
   }
-  if(!P.length)$('#list').innerHTML='<div class="empty"><b>Connexion impossible</b>Vérifiez votre connexion internet puis réessayez.</div>';
+  if(!P.length)$('#view').innerHTML='<div class="empty"><b>Connexion impossible</b>Vérifiez votre connexion internet puis réessayez.</div>';
+  if(route==='commandes')refreshStatuses();
 }
+window.addEventListener('hashchange',()=>{if(currentRoute()==='commandes')refreshStatuses()});
 init();
